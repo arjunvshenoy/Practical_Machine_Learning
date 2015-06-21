@@ -1,0 +1,151 @@
+---
+title: "PRACTICAL MACHINE LEARNING ASSIGNMENT"
+output: html_document
+---
+STEP 1: LOAD REQUIRED LIBRARIES
+-------------
+
+The first step is to laod the libraries. All required libraries are first loaded into R
+
+library(caret)
+
+library(rpart)
+
+library(rpart.plot)
+
+library(RColorBrewer)
+
+library(rattle)
+
+library(randomForest)
+
+
+
+------------------------------------------------------------------------------
+
+
+
+STEP 2 : LOAD DATA
+-------------
+
+Step 2 is to load the data. The testing and training data are loaded after setting the working directory. 
+
+The training dataset consists of 19622 observations with 160 columns
+
+The testing dataset consists of 5885 obserrvations with 58 columns
+
+setwd("C:/Users/212312659/Desktop/Utility/Essentials/Coursera/Practical Machine Learning/Project")
+
+training <- read.csv("pml-training.csv")
+
+testing <- read.csv("pml-testing.csv")
+
+
+
+------------------------------------------------------------------------------
+
+
+
+STEP 3 : PARTITIONING THE DATA
+-------------
+
+The next step is to partition the data. 70 percent of data is used for training and the rest 30 percent is used for testing
+
+temp <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
+
+training_train <- training[temp, ]; 
+
+training_test <- training[-temp, ]
+
+
+
+------------------------------------------------------------------------------
+
+
+STEP 4 : CLEANING DATA
+-------------
+
+
+The next part of it is cleaning the dataset. I have considered 3 different steps
+
+STEP 4 (A) - REMOVING NZV VARIABLES
+
+The firsts step is to list the NZV variables. THe NZV variable columns are then removed from the training dataset. Dimenstions of training_traing after removal of NZV is 13737 by 100
+
+training_train_NZV <- nearZeroVar(training_train, saveMetrics=TRUE)
+
+
+-------------
+
+STEP 4 (B) - REMOVING THE FIRST COLUMN
+
+In the second step, the first column is removed as it does not have any significance towards model building. The first column corresponds to row numbers. Hence it is removed. The dimesntion comes to 13737 by 99
+
+-------------
+
+STEP 4 (C) - REMOVING columns with NA's greater than 0.5
+
+The third step is to remove columns with large number of NA's. If this is not removed, then the decision tree algorithm gives an error. A for loop is written that removed columns where NA variables are greater than 0.5
+
+The dimesntion comes to 13737 by 58 variables
+
+
+
+------------------------------------------------------------------------------
+
+
+
+STEP 5 : FIT MODELS
+------------
+
+STEP 5 (A) - FIT A DECISION TREE
+
+A decision tree model is used
+
+model_DT <- rpart(classe ~ ., data=training_train, method="class")
+
+Accuracy : 0.8661
+
+------------
+
+STEP 5 (B) - FIT A RANDOM FOREST
+
+A random forest model is used
+
+model_RF <- randomForest(classe ~ ., data=training_train, importance = FALSE)
+
+Accuracy : 0.999
+
+
+
+------------------------------------------------------------------------------
+
+
+
+STEP 6 : PREDICT THE MODEL
+------------
+
+
+Based on the accuracy, the random forest model is used for prediction. 
+
+testing <- testing[colnames(training_train[, -58])]
+
+pred <- predict(model_RF, testing, type = "class")
+
+pml_write_files = function(x){
+
+  n = length(x)
+  
+  for(i in 1:n){ 
+  
+    filename = paste0("problem_id_",i,".txt")
+    
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  
+  }
+}
+
+pml_write_files(pred)
+
+
+------------------------------------------------------------------------------
